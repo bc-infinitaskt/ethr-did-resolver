@@ -60,7 +60,11 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	defer cancel()
 
 	// prepare for query event logs
+	//TODO: V this is wrong should refactor
 	didAttributeChangedEvent := crypto.Keccak256Hash([]byte(DIDAttributeChanged))
+
+	//0x18ab6b2ae3d64306c00ce663125f2bd680e441a098de1635bd7ad8b0d44965e4
+	didAttributeChangedEvent = common.HexToHash("0x18ab6b2ae3d64306c00ce663125f2bd680e441a098de1635bd7ad8b0d44965e4")
 	//TODO: remove when no need to show log Debug
 	logger.Debugf("DidAttributeChangedEvent: %s", didAttributeChangedEvent.Hex())
 
