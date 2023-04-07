@@ -113,7 +113,7 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	logger.Debugf("DidAttributeChangedLog: %s", string(didAttributeChangedLog))
 
 	var KID string
-	didAttributeChangedName := string(didAttributeChanged.Name[:])
+	didAttributeChangedName := string(common.TrimRightZeroes(didAttributeChanged.Name[:]))
 	switch didAttributeChangedName {
 	case DIDPubEd25519:
 		KID, err = localkms.CreateKID(didAttributeChanged.Value, kms.ED25519Type)
