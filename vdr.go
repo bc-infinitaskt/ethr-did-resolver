@@ -15,7 +15,7 @@ import (
 
 const (
 	// DIDMethod did method.
-	DIDMethod = "ethr"
+	MethodEthr = "ethr"
 
 	DefaultTimeout = time.Second * 60
 )
@@ -32,7 +32,7 @@ type VDR struct {
 func New(methodName string, opts ...Option) (*VDR, error) {
 	vdri := &VDR{MethodName: methodName, Timeout: DefaultTimeout}
 	if methodName == "" {
-		methodName = DIDMethod
+		methodName = MethodEthr
 	}
 	for _, opt := range opts {
 		opt(vdri)
