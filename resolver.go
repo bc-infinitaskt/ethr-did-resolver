@@ -61,6 +61,9 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 
 	// prepare for query event logs
 	didAttributeChangedEvent := crypto.Keccak256Hash([]byte(DIDAttributeChanged))
+	//TODO: remove when no need to show log Debug
+	logger.Debugf("DidAttributeChangedEvent: %s", didAttributeChangedEvent.Hex())
+
 	query := ethereum.FilterQuery{
 		FromBlock: blockNumber,
 		ToBlock:   blockNumber,
@@ -90,8 +93,9 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 
 		//TODO: remove when no need to show log Debug
 		filterLogsLog, _ := json.MarshalIndent(log, "", "  ")
+		logger.Debugf("Topics[0].Hex(): %s", log.Topics[0].Hex())
 		logger.Debugf("query: %s", string(filterLogsLog))
-		
+
 		switch log.Topics[0].Hex() {
 		case didAttributeChangedEvent.Hex():
 			if err := contractAbi.UnpackIntoInterface(didAttributeChanged, "DIDAttributeChanged", log.Data); err != nil {
