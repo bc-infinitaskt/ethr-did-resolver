@@ -1,0 +1,10 @@
+.idea
+.vs
+.vscode
+
+.DS_Store
+
+/logs/
+/vendor/
+
+goapp
