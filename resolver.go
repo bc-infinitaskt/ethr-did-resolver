@@ -2,6 +2,7 @@ package ethr
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -86,6 +87,10 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 			}
 		}
 	}
+
+	//TODO: remove when no need to show log Debug
+	didAttributeChangedLog, _ := json.MarshalIndent(didAttributeChanged, "", "  ")
+	logger.Debugf("DidAttributeChangedLog: %s", string(didAttributeChangedLog))
 
 	var KID string
 	didAttributeChangedName := string(didAttributeChanged.Name[:])
