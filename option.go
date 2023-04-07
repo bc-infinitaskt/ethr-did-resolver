@@ -24,7 +24,7 @@ func WithDial(url string) Option {
 // WithContractAddress is contractAddress with EIP-1056
 func WithContractAddress(contractAddress string) Option {
 	return func(opts *VDR) {
-		*opts.ContractAddress = common.HexToAddress(contractAddress)
+		opts.ContractAddress = common.HexToAddress(contractAddress)
 	}
 }
 

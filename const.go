@@ -1,5 +1,7 @@
 package ethr
 
+import "github.com/ethereum/go-ethereum/common"
+
 const (
 	DIDAttributeChanged = "DIDAttributeChanged(address,bytes32,bytes,uint,uint)"
 
@@ -19,3 +21,4 @@ var EtherDIDKeyTypes = map[string]string{
 	DIDPubSecp256k1: ecdsaSecp256k1VerificationKey2019,
 	DIDPubX25519:    x25519KeyAgreementKey2019,
 }
+var EmptyContractAddress = common.HexToAddress("0x00")

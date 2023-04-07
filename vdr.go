@@ -25,7 +25,7 @@ var logger = log.New("vdr/ethr")
 type VDR struct {
 	MethodName      string
 	Client          *ethclient.Client
-	ContractAddress *common.Address
+	ContractAddress common.Address
 	Timeout         time.Duration
 }
 
@@ -40,7 +40,7 @@ func New(methodName string, opts ...Option) (*VDR, error) {
 	if vdri.Client == nil {
 		return nil, errors.New("an ethereum client must be set with an option to New")
 	}
-	if vdri.ContractAddress == nil {
+	if vdri.ContractAddress == EmptyContractAddress {
 		return nil, errors.New("a contract address must be set with an option to New")
 	}
 	return vdri, nil

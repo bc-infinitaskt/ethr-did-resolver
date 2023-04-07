@@ -40,7 +40,7 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 		return nil, errors.Wrap(err, "unable to passer contract abi")
 	}
 
-	instance, err := didcontract.NewContract(*v.ContractAddress, v.Client)
+	instance, err := didcontract.NewContract(v.ContractAddress, v.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instance contract")
 	}
@@ -60,7 +60,7 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	query := ethereum.FilterQuery{
 		FromBlock: blockNumber,
 		ToBlock:   blockNumber,
-		Addresses: []common.Address{*v.ContractAddress},
+		Addresses: []common.Address{v.ContractAddress},
 	}
 
 	// get time from BlockByNumber
