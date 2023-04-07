@@ -53,6 +53,9 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 		return nil, errors.Wrap(err, "unable to get BlockNumber")
 	}
 
+	//TODO: remove when no need to show log Debug
+	logger.Debugf("BlockNumber: %s", blockNumber.String())
+
 	ctx, cancel := context.WithTimeout(context.Background(), v.Timeout)
 	defer cancel()
 
