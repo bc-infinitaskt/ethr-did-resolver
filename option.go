@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"log"
 	"strings"
 	"time"
 )
@@ -36,18 +35,17 @@ func WithTimeout(timeout int64) Option {
 	}
 }
 
-// WithRawDial connect with rawurl example: https://rpc.example:0xf3beac30c498d9e26865f34fcaa57dbb935b0d74
-func WithRawDial(rawurl string) Option {
-	return func(opts *VDR) {
-		params := strings.Split(rawurl, ":")
-		paramsLength := len(params)
-		if paramsLength <= 2 {
-			log.Panicf("can't parse rawurl [%s] params is less than 3", rawurl)
-		}
-
-		address := params[paramsLength-1]
-		url := strings.Replace(rawurl, address, "", -1)
-		WithDial(url)
-		WithContractAddress(address)
+// RawUrlParser connect with rawurl example: https://rpc.example:0xf3beac30c498d9e26865f34fcaa57dbb935b0d74
+func RawUrlParser(rawurl string) ([]Option, error) {
+	params := strings.Split(rawurl, ":")
+	paramsLength := len(params)
+	if paramsLength <= 2 {
+		return nil, fmt.Errorf("can't parse rawurl [%s] params is less than 3", rawurl)
 	}
+	address := params[paramsLength-1]
+	url := strings.Replace(rawurl, address, "", -1)
+	var opts []Option
+	opts = append(opts, WithDial(url))
+	opts = append(opts, WithContractAddress(address))
+	return opts, nil
 }
