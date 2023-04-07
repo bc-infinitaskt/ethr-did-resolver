@@ -74,6 +74,10 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	}
 	txnTime := time.Unix(int64(blockData.Time()), 0)
 
+	//TODO: remove when no need to show log Debug
+	queryLog, _ := json.MarshalIndent(query, "", "  ")
+	logger.Debugf("query: %s", string(queryLog))
+
 	// query event logs
 	filterLogs, err := v.Client.FilterLogs(ctx, query)
 	if err != nil {
@@ -83,6 +87,11 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	// Unpack log to DIDAttributeChanged struct
 	didAttributeChanged := &didcontract.ContractDIDAttributeChanged{}
 	for _, log := range filterLogs {
+
+		//TODO: remove when no need to show log Debug
+		filterLogsLog, _ := json.MarshalIndent(log, "", "  ")
+		logger.Debugf("query: %s", string(filterLogsLog))
+		
 		switch log.Topics[0].Hex() {
 		case didAttributeChangedEvent.Hex():
 			if err := contractAbi.UnpackIntoInterface(didAttributeChanged, "DIDAttributeChanged", log.Data); err != nil {
