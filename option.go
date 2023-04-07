@@ -40,10 +40,14 @@ func WithTimeout(timeout int64) Option {
 func WithRawDial(rawurl string) Option {
 	return func(opts *VDR) {
 		params := strings.Split(rawurl, ":")
-		if len(params) != 2 {
-			log.Panicf("can't parse rawurl [%s] or len != 2", rawurl)
+		paramsLength := len(params)
+		if paramsLength <= 2 {
+			log.Panicf("can't parse rawurl [%s] params is less than 3", rawurl)
 		}
-		WithDial(params[0])
-		WithContractAddress(params[1])
+
+		address := params[paramsLength-1]
+		url := strings.Replace(rawurl, address, "", -1)
+		WithDial(url)
+		WithContractAddress(address)
 	}
 }
