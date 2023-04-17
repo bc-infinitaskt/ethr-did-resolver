@@ -2,17 +2,12 @@ package ethr
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	didcontract "github.com/bc-infinitaskt/ethr-did-resolver/contract"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	diddoc "github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	vdrapi "github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -36,82 +31,43 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 		opt(resOpts)
 	}
 
-	contractAbi, err := abi.JSON(strings.NewReader(didcontract.ContractMetaData.ABI))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to passer contract abi")
-	}
-
 	instance, err := didcontract.NewContract(v.ContractAddress, v.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instance contract")
 	}
 
-	// get blockNumber for query range
+	// Get least changed at block no
+	ctxc, cancc := context.WithTimeout(context.Background(), v.Timeout)
+	defer cancc()
 	identity := common.HexToAddress(parsedDID.MethodSpecificID)
-	blockNumber, err := instance.Changed(&bind.CallOpts{}, identity)
+	changed, err := instance.Changed(&bind.CallOpts{Context: ctxc}, identity)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get BlockNumber")
+		return nil, errors.Wrap(err, "unable to get changed at block no")
 	}
+	blockNumber := changed.Uint64()
+	logger.Debugf("identity [%s] least changed at block no [%s]", identity.String(), changed.String())
 
-	//TODO: remove when no need to show log Debug
-	logger.Debugf("BlockNumber: %s", blockNumber.String())
-
-	ctx, cancel := context.WithTimeout(context.Background(), v.Timeout)
-	defer cancel()
-
-	// prepare for query event logs
-	//TODO: V this is wrong should refactor
-	didAttributeChangedEvent := crypto.Keccak256Hash([]byte(DIDAttributeChanged))
-
-	//0x18ab6b2ae3d64306c00ce663125f2bd680e441a098de1635bd7ad8b0d44965e4
-	didAttributeChangedEvent = common.HexToHash("0x18ab6b2ae3d64306c00ce663125f2bd680e441a098de1635bd7ad8b0d44965e4")
-	//TODO: remove when no need to show log Debug
-	logger.Debugf("DidAttributeChangedEvent: %s", didAttributeChangedEvent.Hex())
-
-	query := ethereum.FilterQuery{
-		FromBlock: blockNumber,
-		ToBlock:   blockNumber,
-		Addresses: []common.Address{v.ContractAddress},
-	}
-
-	// get time from BlockByNumber
-	blockData, err := v.Client.BlockByNumber(ctx, blockNumber)
+	// Get time of least changed at block no
+	ctxb, cancb := context.WithTimeout(context.Background(), v.Timeout)
+	defer cancb()
+	blockData, err := v.Client.BlockByNumber(ctxb, changed)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to query event logs")
 	}
+
 	txnTime := time.Unix(int64(blockData.Time()), 0)
+	logger.Debugf("identity [%s] least changed at block time [%s]", identity.String(), txnTime.String())
 
-	//TODO: remove when no need to show log Debug
-	queryLog, _ := json.MarshalIndent(query, "", "  ")
-	logger.Debugf("query: %s", string(queryLog))
-
-	// query event logs
-	filterLogs, err := v.Client.FilterLogs(ctx, query)
+	// Query DIDAttributeChanged from event logs
+	ctxf, cancf := context.WithTimeout(context.Background(), v.Timeout)
+	defer cancf()
+	filter := &bind.FilterOpts{Start: blockNumber, End: &blockNumber, Context: ctxf}
+	result, err := instance.FilterDIDAttributeChanged(filter, []common.Address{v.ContractAddress})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to query event logs")
 	}
 
-	// Unpack log to DIDAttributeChanged struct
-	didAttributeChanged := &didcontract.ContractDIDAttributeChanged{}
-	for _, log := range filterLogs {
-
-		//TODO: remove when no need to show log Debug
-		filterLogsLog, _ := json.MarshalIndent(log, "", "  ")
-		logger.Debugf("Topics[0].Hex(): %s", log.Topics[0].Hex())
-		logger.Debugf("query: %s", string(filterLogsLog))
-
-		switch log.Topics[0].Hex() {
-		case didAttributeChangedEvent.Hex():
-			if err := contractAbi.UnpackIntoInterface(didAttributeChanged, "DIDAttributeChanged", log.Data); err != nil {
-				return nil, errors.Wrap(err, "unable to passer to DIDAttributeChanged")
-			}
-		}
-	}
-
-	//TODO: remove when no need to show log Debug
-	didAttributeChangedLog, _ := json.MarshalIndent(didAttributeChanged, "", "  ")
-	logger.Debugf("DidAttributeChangedLog: %s", string(didAttributeChangedLog))
-
+	didAttributeChanged := result.Event
 	var KID string
 	didAttributeChangedName := string(common.TrimRightZeroes(didAttributeChanged.Name[:]))
 	switch didAttributeChangedName {

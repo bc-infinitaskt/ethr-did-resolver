@@ -3,8 +3,6 @@ package ethr
 import "github.com/ethereum/go-ethereum/common"
 
 const (
-	DIDAttributeChanged = "DIDAttributeChanged(address,bytes32,bytes,uint,uint)"
-
 	schemaV1 = "https://w3id.org/did/v1"
 
 	DIDPubEd25519   = "did/pub/Ed25519/veriKey/base58"
