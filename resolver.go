@@ -3,6 +3,7 @@ package ethr
 import (
 	"context"
 	"fmt"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/util/jwkkid"
 	"time"
 
 	didcontract "github.com/bc-infinitaskt/ethr-did-resolver/contract"
@@ -11,7 +12,6 @@ import (
 	diddoc "github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	vdrapi "github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
-	"github.com/hyperledger/aries-framework-go/pkg/kms/localkms"
 	"github.com/pkg/errors"
 )
 
@@ -72,7 +72,7 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	didAttributeChangedName := string(common.TrimRightZeroes(didAttributeChanged.Name[:]))
 	switch didAttributeChangedName {
 	case DIDPubEd25519:
-		KID, err = localkms.CreateKID(didAttributeChanged.Value, kms.ED25519Type)
+		KID, err = jwkkid.CreateKID(didAttributeChanged.Value, kms.ED25519Type)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create key ID: %v", err)
 		}
