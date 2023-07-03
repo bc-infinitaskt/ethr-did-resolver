@@ -75,6 +75,9 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 		Addresses: []common.Address{v.ContractAddress},
 	}
 	filterLogs, err := v.Client.FilterLogs(ctxFilterLogs, query)
+	if len(filterLogs) == 0 {
+		return nil, fmt.Errorf("query event logs not found, please check contract address [%s] and identity [%s] are correct", v.ContractAddress.Hex(), identity.Hex())
+	}
 	for _, log := range filterLogs {
 		switch log.Topics[0].Hex() {
 		case FilterDIDAttributeChanged.Hex():
