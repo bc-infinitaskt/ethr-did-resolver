@@ -3,8 +3,10 @@ package ethr
 import (
 	"context"
 	"fmt"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/util/jwkkid"
 	"time"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/util/jwkkid"
 
 	didcontract "github.com/bc-infinitaskt/ethr-did-resolver/contract"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -31,6 +33,11 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 		opt(resOpts)
 	}
 
+	abi, err := didcontract.ContractMetaData.GetAbi()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable get abi from ContractMetaData")
+	}
+
 	instance, err := didcontract.NewContract(v.ContractAddress, v.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instance contract")
@@ -44,7 +51,6 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get changed at block no")
 	}
-	blockNumber := changed.Uint64()
 	logger.Debugf("identity [%s] least changed at block no [%s]", identity.String(), changed.String())
 
 	// Get time of least changed at block no
@@ -59,15 +65,25 @@ func (v *VDR) Read(did string, opts ...vdrapi.DIDMethodOption) (*diddoc.DocResol
 	logger.Debugf("identity [%s] least changed at block time [%s]", identity.String(), txnTime.String())
 
 	// Query DIDAttributeChanged from event logs
-	ctxf, cancf := context.WithTimeout(context.Background(), v.Timeout)
-	defer cancf()
-	filter := &bind.FilterOpts{Start: blockNumber, End: &blockNumber, Context: ctxf}
-	result, err := instance.FilterDIDAttributeChanged(filter, []common.Address{v.ContractAddress})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to query event logs")
+	ctxFilterLogs, canFilterLogs := context.WithTimeout(context.Background(), v.Timeout)
+	defer canFilterLogs()
+
+	didAttributeChanged := new(didcontract.ContractDIDAttributeChanged)
+	query := ethereum.FilterQuery{
+		FromBlock: changed,
+		ToBlock:   changed,
+		Addresses: []common.Address{v.ContractAddress},
+	}
+	filterLogs, err := v.Client.FilterLogs(ctxFilterLogs, query)
+	for _, log := range filterLogs {
+		switch log.Topics[0].Hex() {
+		case FilterDIDAttributeChanged.Hex():
+			if err := abi.UnpackIntoInterface(didAttributeChanged, "DIDAttributeChanged", log.Data); err != nil {
+				return nil, errors.Wrap(err, "unable to passer to DIDAttributeChanged")
+			}
+		}
 	}
 
-	didAttributeChanged := result.Event
 	var KID string
 	didAttributeChangedName := string(common.TrimRightZeroes(didAttributeChanged.Name[:]))
 	switch didAttributeChangedName {
